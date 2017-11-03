@@ -10,35 +10,38 @@ class BlastLoadingContainer extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            status: '',
-            jobid: ''
+            currentJobId: '',
+            status: ''
         };
-        console.log(this.state.selectedJob);
+        if (this.props.sequence && this.props.sequence.length > 0) {
+            this.submitBlastJob();
+        } else if (this.props.selectedJob && this.props.selectedJob.length > 0) {
+            console.log(this.props.selectedJob);
+        }
+    }
+
+    submitBlastJob() {
         fetch("https://www.ebi.ac.uk/Tools/services/rest/ncbiblast/run/", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
             },
-            body: `email=info@uniprot.org&database=uniprotkb&program=blastp&stype=protein&sequence=${props.sequence}`
-        }).then(d => d.text().then(d => this.trackJob(d)));
+            body: `email=info@uniprot.org&database=uniprotkb&program=blastp&stype=protein&sequence=${this.props.sequence}`
+        }).then(d => d.text().then(d => this.trackJob(d).then(d => this.retrieveResults(d))));
     }
 
     trackJob(jobid) {
-        this.setState({jobid: jobid});
-        const intervalId = setInterval(() => this.getJobStatus(jobid), 5000);
-        this.setState({intervalId: intervalId});
-    }
-
-    getJobStatus(jobid) {
-        fetch(`http://www.ebi.ac.uk/Tools/services/rest/ncbiblast/status/${jobid}`).then(d => d.text().then(d => {
-            this.setState({status: d});
-            if (d === "FINISHED") {
-                this.retrieveResults(jobid);
-                clearInterval(this.state.intervalId);
-            } else {
-                console.log(d);
-            }
-        }));
+        return new Promise((resolve, reject) => {
+            this.setState({currentJobId: jobid});
+            const intervalId = setInterval(() => fetch(`http://www.ebi.ac.uk/Tools/services/rest/ncbiblast/status/${jobid}`).then(d => d.text().then(d => {
+                if (d === "FINISHED") {
+                    resolve(jobid);
+                    clearInterval(intervalId);
+                } else {
+                    console.log(d);
+                }
+            })), 1000);
+        });
     }
 
     retrieveResults(jobid) {
@@ -53,14 +56,14 @@ class BlastLoadingContainer extends Component {
     render() {
         return (
             <div>
-                <BlastRunner jobid={this.state.jobid}/> {this.state.selectedJob}
+                <BlastRunner jobid={this.state.currentJobId}/> {this.state.selectedJob}
             </div>
         )
     }
 }
 
 const mapStateToProps = state => {
-    return {selectedJob: state.selectedJob}
+    return {selectedJob: state.jobSelect.selectedJob}
 }
 
 export default connect(mapStateToProps)(BlastLoadingContainer);

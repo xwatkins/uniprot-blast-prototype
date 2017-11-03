@@ -1,6 +1,7 @@
 import React, {Component} from "react";
 import BlastForm from "./BlastForm";
 import BlastLoadingContainer from "./BlastLoadingContainer";
+import RecentJobs from './RecentJobs';
 import $ from 'jquery';
 import 'foundation-sites/dist/css/foundation.min.css';
 import 'foundation-sites'
@@ -49,8 +50,7 @@ class App extends Component {
             <h1>BLAST</h1>
           </div>
           <div className="cell small-2">
-            <h4>Recent jobs</h4>
-            <em>none</em>
+            <RecentJobs/>
           </div>
           <div className="cell auto">
             {!isSubmitted
